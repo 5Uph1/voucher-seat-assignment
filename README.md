@@ -74,7 +74,7 @@ voucher-seat-assignment/
 │
 ├── backend/
 │   ├── app/
-│   │   ├── Exeptions/
+│   │   ├── Exceptions/
 │   │   ├── Http/
 │   │   │   ├── Controllers/
 │   │   │   ├── Requests/
@@ -106,6 +106,8 @@ Before running this project, ensure the following software is installed:
 
 ## 1. Clone Repository
 
+Clone this repository and navigate to the project directory.
+
 ```bash
 git clone https://github.com/5Uph1/voucher-seat-assignment.git
 
@@ -114,27 +116,27 @@ cd voucher-seat-assignment
 
 ---
 
-## 2. Backend Installation
+## 2. Backend Setup
 
-Move to backend folder
+Navigate to the backend directory.
 
 ```bash
 cd backend
 ```
 
-Install dependencies
+Install the PHP dependencies.
 
 ```bash
 composer install
 ```
 
-Copy environment file
+Copy the environment configuration file.
 
 ```bash
 cp .env.example .env
 ```
 
-Generate application key
+Generate the Laravel application key.
 
 ```bash
 php artisan key:generate
@@ -142,17 +144,15 @@ php artisan key:generate
 
 ---
 
-## 3. Configure Environment
+## 3. Configure SQLite
+
+Create the SQLite database file.
 
 ```bash
-cp .env.example .env
-
-php artisan key:generate
-
 touch database/database.sqlite
 ```
 
-Then update the following values in `.env`:
+Update the following values in your `.env` file:
 
 ```env
 DB_CONNECTION=sqlite
@@ -163,51 +163,83 @@ DB_DATABASE=database/database.sqlite
 
 ## 4. Run Database Migration
 
+Run the database migrations to create the required tables.
+
 ```bash
 php artisan migrate
 ```
 
 ---
 
-## 5. Start Laravel Server
+## 5. Start the Laravel Backend
+
+Start the Laravel development server.
 
 ```bash
 php artisan serve
 ```
 
-Backend will be available at
+The backend API will be available at:
 
 ```text
 http://localhost:8000
 ```
 
+Keep this terminal running while using the application.
+
 ---
 
-## 6. Frontend Installation
+## 6. Frontend Setup
 
-Move to frontend folder
+Open a **new terminal**, then navigate to the frontend directory.
 
 ```bash
-cd ../frontend
+cd frontend
 ```
 
-Install dependencies
+Install the Node.js dependencies.
 
 ```bash
 npm install
 ```
 
-Start development server
+Start the React development server.
 
 ```bash
 npm run dev
 ```
 
-Frontend will be available at
+The frontend application will be available at:
 
 ```text
 http://localhost:5173
 ```
+
+Keep this terminal running while using the application.
+
+---
+
+## 7. Running the Application
+
+This project consists of two separate applications:
+
+| Service     | URL                   |
+| ----------- | --------------------- |
+| Frontend    | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+
+Make sure **both the frontend and backend development servers are running simultaneously**.
+
+To use the application:
+
+1. Open **http://localhost:5173** in your browser.
+2. Fill in the crew and flight information.
+3. Select the aircraft type and flight date.
+4. Click **Generate Vouchers**.
+5. The frontend will call the Laravel API to:
+   - Check whether vouchers already exist for the selected flight and date.
+   - Generate three unique random seats.
+   - Store the generated voucher in the SQLite database.
 
 ---
 
