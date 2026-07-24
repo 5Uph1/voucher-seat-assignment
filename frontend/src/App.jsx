@@ -1,122 +1,164 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import { checkVoucher, generateVoucher, toIsoDate } from "./api";
 
-function App() {
-  const [count, setCount] = useState(0)
+const AIRCRAFT_OPTIONS = ["ATR", "Airbus 320", "Boeing 737 Max"];
+const DATE_PATTERN = /^\d{2}-\d{2}-\d{4}$/;
+
+const initialForm = {
+  crewName: "",
+  crewId: "",
+  flightNumber: "",
+  flightDate: "",
+  aircraftType: AIRCRAFT_OPTIONS[0],
+};
+
+export default function App() {
+  const [form, setForm] = useState(initialForm);
+  const [seats, setSeats] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function updateField(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function validate() {
+    if (!form.crewName.trim()) return "Crew name is required.";
+    if (!form.crewId.trim()) return "Crew ID is required.";
+    if (!form.flightNumber.trim()) return "Flight number is required.";
+    if (!DATE_PATTERN.test(form.flightDate))
+      return "Flight date must be in DD-MM-YYYY format.";
+    return "";
+  }
+
+  async function handleGenerate(e) {
+    e.preventDefault();
+    setSeats(null);
+    setError("");
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const isoDate = toIsoDate(form.flightDate);
+    setLoading(true);
+
+    try {
+      const { exists } = await checkVoucher({
+        flightNumber: form.flightNumber,
+        date: isoDate,
+      });
+
+      if (exists) {
+        setError(
+          `Vouchers have already been generated for flight ${form.flightNumber} on ${form.flightDate}.`,
+        );
+        return;
+      }
+
+      const result = await generateVoucher({
+        name: form.crewName,
+        id: form.crewId,
+        flightNumber: form.flightNumber,
+        date: isoDate,
+        aircraft: form.aircraftType,
+      });
+
+      setSeats(result.seats);
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="page">
+      <div className="card">
+        <h1>Voucher Seat Assignment</h1>
+        <p className="subtitle">
+          Generate 3 random seat vouchers for a flight.
+        </p>
 
-      <div className="ticks"></div>
+        <form onSubmit={handleGenerate} className="form">
+          <label>
+            Crew Name
+            <input
+              type="text"
+              value={form.crewName}
+              onChange={(e) => updateField("crewName", e.target.value)}
+              placeholder="e.g. Sarah"
+            />
+          </label>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <label>
+            Crew ID
+            <input
+              type="text"
+              value={form.crewId}
+              onChange={(e) => updateField("crewId", e.target.value)}
+              placeholder="e.g. 98123"
+            />
+          </label>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <label>
+            Flight Number
+            <input
+              type="text"
+              value={form.flightNumber}
+              onChange={(e) =>
+                updateField("flightNumber", e.target.value.toUpperCase())
+              }
+              placeholder="e.g. GA102"
+            />
+          </label>
+
+          <label>
+            Flight Date
+            <input
+              type="text"
+              value={form.flightDate}
+              onChange={(e) => updateField("flightDate", e.target.value)}
+              placeholder="DD-MM-YYYY"
+            />
+          </label>
+
+          <label>
+            Aircraft Type
+            <select
+              value={form.aircraftType}
+              onChange={(e) => updateField("aircraftType", e.target.value)}
+            >
+              {AIRCRAFT_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Generating..." : "Generate Vouchers"}
+          </button>
+        </form>
+
+        {error && <div className="alert alert-error">{error}</div>}
+
+        {seats && (
+          <div className="alert alert-success">
+            <strong>Vouchers generated!</strong>
+            <div className="seats">
+              {seats.map((seat) => (
+                <span key={seat} className="seat-pill">
+                  {seat}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
-
-export default App
